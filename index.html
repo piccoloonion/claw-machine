@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Claw Machine</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  canvas {
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(80, 120, 255, 0.3);
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+//
+// CONFIG: Swap prize sets — add as many as you want
+//
+const PRIZE_SETS = {
+  pokemon: {
+    name: 'Pocket Monsters',
+    prizes: [
+      { color: '#ff6b6b', size: 28, weight: 0.4, label: '🔴' },
+      { color: '#4ecdc4', size: 32, weight: 0.4, label: '🟢' },
+      { color: '#ffd93d', size: 26, weight: 0.35, label: '⚡' },
+      { color: '#6c5ce7', size: 30, weight: 0.45, label: '🟣' },
+      { color: '#ff9ff3', size: 24, weight: 0.3, label: '💗' },
+      { color: '#00cec9', size: 34, weight: 0.5, label: '🟤' },
+      { color: '#fd79a8', size: 22, weight: 0.35, label: '🐾' },
+      { color: '#e17055', size: 36, weight: 0.55, label: '🔥' },
+      { color: '#00b894', size: 28, weight: 0.4, label: '🌿' },
+      { color: '#a29bfe', size: 30, weight: 0.45, label: '💎' },
+      { color: '#ffeaa7', size: 26, weight: 0.35, label: '⭐' },
+      { color: '#55a3f5', size: 32, weight: 0.5, label: '💧' },
+    ],
+  },
+  toiletpaper: {
+    name: 'Toilet Paper',
+    prizes: [
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
+      { color: '#fdcb6e', size: 24, weight: 0.12, label: '✨', drag: 0.95 },
+      { color: '#fdcb6e', size: 24, weight: 0.12, label: '✨', drag: 0.95 },
+    ],
+  }
+};
+
+// Pick a prize set — swap this anytime
+const PRIZE_SET = PRIZE_SETS.pokemon;
+// const PRIZE_SET = PRIZE_SETS.toiletpaper;
+
+//
+// Canvas Setup
+//
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = 720;
+const H = 1280;
+canvas.width = W;
+canvas.height = H;
+
+//
+// Constants
+//
+const MACHINE = {
+  x: 40, y: 40, width: W - 80, height: H - 120,
+  glassWidth: W - 120, glassHeight: H - 300,
+  clawRailY: 80,
+  clawHeight: 80,
+  clawWidth: 100,
+};
+const CLAW_CENTER = { x: W / 2, y: MACHINE.clawRailY + 20 };
+const PRIZE_AREA_TOP = 280;
+const CHUTE_W = 140;
+const CHUTE_X = (W - CHUTE_W) / 2;
+const CHUTE_Y = MACHINE.y + MACHINE.height - 20;
+const CLAW_SPEED_H = 4;
+const CLAW_SPEED_V = 3.5;
+const SNAP_RADIUS = 55;
+const GRIP_CHANCE = 0.70;
+
+//
+// Game State
+//
+let credits = 10;
+let prizesWon = [];
+let gameState = 'idle'; // idle | dropping | grabbing | rising | returning | dropping_prize | win
+let clawX = W / 2;
+let clawY = MACHINE.clawRailY + 20;
+let clawOpen = true;
+let clawGrabbed = null;
+let dropTargetX = W / 2;
+let dropX = W / 2;
+let dropY = 0;
+let message = '';
+let messageTimer = 0;
+
+//
+// Prizes
+//
+const prizes = [];
+
+function spawnPrizes() {
+  const count = PRIZE_SET.prizes.length;
+  const cols = 4;
+  const rows = Math.ceil(count / cols);
+  const spacingX = (MACHINE.glassWidth - 60) / cols;
+  const spacingY = 40;
+  const startX = 80 + 30;
+
+  for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const def = PRIZE_SET.prizes[i];
+    prizes.push({
+      x: startX + col * spacingX + (row % 2) * (spacingX / 2),
+      y: MACHINE.y + MACHINE.height - 160 - row * 40,
+      radius: def.size,
+      color: def.color,
+      weight: def.weight,
+      drag: def.drag || 0.7,
+      label: def.label || '🎁',
+      grabbed: false,
+      vy: 0,
+      vx: 0,
+    });
+  }
+}
+spawnPrizes();
+
+//
+// Controls
+//
+let inputX = 0; // -1 or 1
+let inputDrop = false;
+
+// Desktop
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') inputX = -1;
+  if (e.key === 'ArrowRight') inputX = 1;
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    handleDrop();
+  }
+});
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd') inputX = 0;
+});
+
+// Touch — left half moves claw, right half is drop
+let touchStartX = null;
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const touch of e.changedTouches) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left) * (W / rect.width);
+    const y = (touch.clientY - rect.top) * (H / rect.height);
+    if (x < W / 2) {
+      touchStartX = x;
+    } else {
+      handleDrop();
+    }
+  }
+});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (touchStartX !== null) {
+    for (const touch of e.changedTouches) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) * (W / rect.width);
+      const dx = x - touchStartX;
+      inputX = dx > 20 ? 1 : dx < -20 ? -1 : 0;
+    }
+  }
+});
+
+canvas.addEventListener('touchend', e => {
+  touchStartX = null;
+  inputX = 0;
+});
+
+function handleDrop() {
+  if (gameState === 'idle' && credits > 0) {
+    credits--;
+    gameState = 'dropping';
+    clawOpen = false;
+    clawGrabbed = null;
+  }
+}
+
+//
+// Collision detection — circular colliders
+//
+function nearestPrize(clawPos) {
+  let nearest = null;
+  let minDist = Infinity;
+  for (const p of prizes) {
+    const dx = p.x - clawPos.x;
+    const dy = p.y - (clawPos.y - 10);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < SNAP_RADIUS && dist < minDist) {
+      minDist = dist;
+      nearest = p;
+    }
+  }
+  return nearest;
+}
+
+//
+// Update Logic
+//
+function update() {
+  if (messageTimer > 0) messageTimer--;
+  if (messageTimer === 0) message = '';
+
+  // Horizontal movement
+  if (gameState === 'idle') {
+    clawX += inputX * CLAW_SPEED_H;
+    clawX = Math.max(MACHINE.x + 80, Math.min(MACHINE.x + MACHINE.glassWidth - 20, clawX));
+  }
+
+  switch (gameState) {
+    case 'dropping':
+      clawY += CLAW_SPEED_V;
+      if (clawY >= MACHINE.y + MACHINE.height - 150) {
+        gameState = 'grabbing';
+        clawGrabbed = nearestPrize({ x: clawX, y: clawY });
+        if (clawGrabbed) {
+          if (Math.random() < GRIP_CHANCE) {
+            clawGrabbed.grabbed = true;
+            message = 'Got it! 🎉';
+          } else {
+            message = 'Slipped! 😩';
+            clawGrabbed = null;
+          }
+        } else {
+          message = 'Missed!';
+        }
+        messageTimer = 60;
+      }
+      break;
+
+    case 'grabbing':
+      if (messageTimer-- > 0) break;
+      gameState = 'rising';
+      break;
+
+    case 'rising':
+      clawY -= CLAW_SPEED_V * (1 + (clawGrabbed ? clawGrabbed.weight * 0.3 : 0));
+      if (clawGrabbed) {
+        clawGrabbed.x = clawX;
+        clawGrabbed.y = clawY - 10;
+      }
+      if (clawY <= MACHINE.clawRailY + 20) {
+        clawY = MACHINE.clawRailY + 20;
+        gameState = 'returning';
+        dropX = clawX;
+        dropY = clawY + 30;
+      }
+      break;
+
+    case 'returning':
+      clawX = clawX + (W / 2 - clawX) * 0.05;
+      if (clawGrabbed) {
+        clawGrabbed.x = clawX;
+        clawGrabbed.y = clawY - 10;
+      }
+      if (Math.abs(clawX - W / 2) < 5) {
+        clawX = W / 2;
+        if (clawGrabbed) {
+          gameState = 'dropping_prize';
+          clawGrabbed.grabbed = false;
+          clawGrabbed.vy = 1;
+        } else {
+          gameState = 'idle';
+        }
+        message = clawGrabbed ? 'Prize collected! 🎁' : 'Nothing caught!';
+        messageTimer = 90;
+      }
+      break;
+
+    case 'dropping_prize':
+      if (clawGrabbed) {
+        clawGrabbed.vy += 0.3;
+        clawGrabbed.y += clawGrabbed.vy * clawGrabbed.drag;
+        if (clawGrabbed.y >= MACHINE.y + MACHINE.height - 70) {
+          clawGrabbed.y = MACHINE.y + MACHINE.height - 70;
+          clawGrabbed.vy = 0;
+          clawGrabbed.grabbed = false;
+          prizesWon.push(clawGrabbed.label);
+          clawGrabbed = null;
+          gameState = 'idle';
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+//
+// Drawing
+//
+function drawMachine() {
+  // Machine body
+  const m = MACHINE;
+  const frameLeft = m.x;
+  const frameRight = m.x + m.width;
+
+  // Outer frame
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath();
+  ctx.roundRect(frameLeft, m.y, m.width, m.height, 16);
+  ctx.fill();
+
+  // Top arch
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath();
+  ctx.roundRect(frameLeft - 10, m.y - 20, m.width + 20, 60, [16, 16, 0, 0]);
+  ctx.fill();
+
+  // Title
+  ctx.fillStyle = '#FFE66D';
+  ctx.font = 'bold 32px Segoe UI, Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('CLAW MACHINE', W / 2, m.y + 18);
+
+  // Glass area
+  ctx.fillStyle = 'rgba(0, 20, 40, 0.5)';
+  ctx.fillRect(frameLeft + 20, m.y + 50, m.glassWidth, m.glassHeight - 40);
+
+  // Chute
+  ctx.fillStyle = '#f39c12';
+  ctx.beginPath();
+  ctx.roundRect(CHUTE_X, CHUTE_Y, CHUTE_W, 60, 8);
+  ctx.fillRect(CHUTE_X, CHUTE_Y - 20, CHUTE_W, 30);
+  ctx.fill();
+  ctx.fillStyle = '#7f1a00';
+  ctx.font = '16px Segoe UI, Arial';
+  ctx.fillText('PRIZE CHUTE', CHUTE_X + CHUTE_W / 2, CHUTE_Y + 35);
+
+  // Side rails
+  ctx.fillStyle = '#c0392b';
+  ctx.fillRect(frameLeft, m.y + 50, 20, m.glassHeight - 40);
+  ctx.fillRect(frameRight - 20, m.y + 50, 20, m.glassHeight - 40);
+}
+
+function drawClaw() {
+  const cx = clawX;
+  const cy = clawY;
+
+  // Cable
+  ctx.strokeStyle = '#777';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(cx, MACHINE.clawRailY);
+  ctx.lineTo(cx, cy);
+  ctx.stroke();
+
+  // Claw body
+  ctx.fillStyle = '#888';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#aaa';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Prongs
+  const openAngle = clawOpen ? 0.5 : 0;
+  ctx.fillStyle = '#777';
+  for (let i = -1; i <= 1; i++) {
+    ctx.save();
+    ctx.translate(cx, cy + 12);
+    ctx.rotate(i * (0.3 + openAngle));
+    ctx.fillRect(-2, 0, 4, 35);
+    ctx.beginPath();
+    ctx.arc(0, 35, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPrize(p) {
+  // Circle
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+  ctx.fillStyle = p.color;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Label
+  ctx.font = '20px Segoe UI Emoji';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(p.label, p.x, p.y);
+}
+
+function drawUI() {
+  // Credits
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath();
+  ctx.roundRect(W - 200, H - 80, 160, 60, 12);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 24px Segoe UI, Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(`CREDITS: ${credits}`, W - 120, H - 45);
+
+  // Drop button (mobile visual hint)
+  ctx.fillStyle = '#2ecc71';
+  ctx.beginPath();
+  ctx.roundRect(W - 200, 900, 160, 80, 12);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 28px Segoe UI, Arial';
+  ctx.fillText('GRAB!', W - 120, 945);
+
+  // Message
+  if (message && messageTimer > 0) {
+    const alpha = Math.min(1, messageTimer / 15);
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.font = 'bold 40px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(message, W / 2, 400);
+  }
+
+  // Prize set label
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '16px Segoe UI, Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Prize Set: ${PRIZE_SET.name} (swap in config)`, 50, H - 40);
+
+  // Won prizes
+  if (prizesWon.length > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'right';
+    ctx.font = '20px Segoe UI Emoji';
+    ctx.textAlign = 'right';
+    ctx.fillText(`Won: ${prizesWon.join(' ')}`, W - 220, H - 100);
+  }
+}
+
+//
+// Main Loop
+//
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0f0c29');
+  bg.addColorStop(0.5, '#302b63');
+  bg.addColorStop(1, '#24243e');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawMachine();
+  prizes.forEach(drawPrize);
+  drawClaw();
+  drawUI();
+
+  update();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
