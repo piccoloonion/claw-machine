@@ -23,117 +23,163 @@
     z-index: 10;
   }
   
+  #header-logo {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    background: rgba(0, 78, 146, 0.7);
+    padding: 10px 40px;
+    border-radius: 12px;
+    border: 3px solid #00d2ff;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.4);
+    pointer-events: none;
+    z-index: 10;
+  }
+  #header-logo .main {
+    font-size: 32px;
+    font-weight: 950;
+    color: #ffd800;
+    text-shadow: 0 0 15px rgba(255, 216, 0, 0.6);
+    letter-spacing: 2px;
+    line-height:1;
+  }
+  #header-logo .sub {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00d2ff;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+
   #top-bar {
     position: absolute;
-    top: 16px;
+    top: 110px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 12px;
+    gap: 16px;
   }
   
   .pill {
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 8px 18px;
+    background: rgba(0, 78, 146, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid rgba(0, 210, 255, 0.3);
+    border-radius: 24px;
+    padding: 10px 24px;
     color: #fff;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
-  .pill.credits { border-color: #ff6b81; }
-  .pill.credits .val { color: #ff6b81; font-size: 20px; font-weight: 800; }
-  .pill.won { border-color: #2ecc71; }
-  .pill.won .val { color: #2ecc71; font-size: 20px; font-weight: 800; }
+  .pill.credits { border-bottom: 4px solid #ffd800; }
+  .pill.won { border-bottom: 4px solid #00d2ff; }
+  .pill .val { font-size: 26px; font-weight: 950; }
+  .pill.credits .val { color: #ffd800; text-shadow: 0 0 10px rgba(255,216,0,0.4); }
+  .pill.won .val { color: #00d2ff; text-shadow: 0 0 10px rgba(0,210,255,0.4); }
   
   #float-msg {
     position: absolute;
-    top: 40%;
+    top: 35%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0.8);
-    font-size: 38px;
-    font-weight: 900;
+    font-size: 48px;
+    font-weight: 950;
     color: #fff;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 20px rgba(46,204,113,0.4);
+    text-shadow: 0 0 30px rgba(0,210,255,0.6);
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
     text-align: center;
-    line-height: 1.2;
+    letter-spacing: -1px;
+    text-transform: uppercase;
   }
   #float-msg.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   
   #grab-btn {
     position: absolute;
-    bottom: 30px;
-    right: 24px;
-    width: 88px;
-    height: 88px;
+    bottom: 40px;
+    right: 40px;
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #ff4757, #c0392b);
-    border: 3px solid rgba(255,255,255,0.25);
+    background: linear-gradient(135deg, #ff4757 0%, #c0392b 100%);
+    border: 5px solid rgba(255,255,255,0.2);
     color: #fff;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    font-size: 20px;
+    font-weight: 950;
     cursor: pointer;
     pointer-events: auto;
-    box-shadow: 0 8px 30px rgba(231, 76, 60, 0.6);
-    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 0 0 8px rgba(255, 71, 87, 0.2), 0 15px 45px rgba(231, 76, 60, 0.6);
+    transition: all 0.2s;
     -webkit-tap-highlight-color: transparent;
+    text-transform: uppercase;
   }
-  #grab-btn:active {
-    transform: scale(0.9);
-    box-shadow: 0 3px 15px rgba(231, 76, 60, 0.4);
-  }
+  #grab-btn:hover { transform: scale(1.05); }
+  #grab-btn:active { transform: scale(0.9); background: #ff4757; }
   
   #dpad {
     position: absolute;
-    bottom: 30px;
-    left: 24px;
+    bottom: 40px;
+    left: 40px;
     pointer-events: auto;
-    -webkit-tap-highlight-color: transparent;
+    background: rgba(0, 78, 146, 0.3);
+    padding: 16px;
+    border-radius: 36px;
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(0, 210, 255, 0.2);
   }
   
-  .dpad-row { display: flex; justify-content: center; }
+  .dpad-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .dpad-row:last-child { margin-bottom: 0; }
+  
   .dpad-btn {
-    width: 60px; height: 60px;
-    background: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 14px;
-    color: rgba(255,255,255,0.6);
-    font-size: 24px;
+    width: 58px; height: 58px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    color: rgba(255,255,255,0.8);
+    font-size: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: none;
+    transition: all 0.15s;
   }
-  .dpad-btn:active { background: rgba(255,255,255,0.25); }
-  .dpad-spacer { width: 60px; height: 60px; }
+  .dpad-btn:hover { background: rgba(0, 210, 255, 0.3); color: #fff; }
+  .dpad-btn:active { transform: scale(0.9); background: #ffd800; color: #000; }
+  .dpad-spacer { width: 58px; height: 58px; }
+
 
   #hint {
     position: absolute;
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    color: rgba(255,255,255,0.3);
-    font-size: 11px;
-    text-align: center;
+    color: rgba(0, 210, 255, 0.5);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     pointer-events: none;
   }
 </style>
 </head>
 <body>
 
+
 <div id="ui">
+  <div id="header-logo">
+    <div class="main">TP TOWER</div>
+    <div class="sub">Claw of Cleanliness</div>
+  </div>
   <div id="top-bar">
     <div class="pill credits">🪙 <div class="val" id="credits-val">10</div></div>
     <div class="pill won">🧻 <div class="val" id="won-val">0</div></div>
@@ -155,6 +201,7 @@
   <button id="grab-btn">GRAB</button>
 </div>
 
+
 <script type="importmap">
 {
   "imports": {
@@ -163,19 +210,23 @@
 }
 </script>
 
+
 <script type="module">
 import * as THREE from 'three';
+
 
 // ───────── Config ─────────
 const MW = 8, MH = 12, MD = 5;          // machine width/height/depth
 const RAIL_Y = MH / 2 - 1.5;            // rail Y position
-const TP_COUNT = 24;
+const TP_COUNT = 64;
 const SNAP_R = 1.3;
 const GRIP_RATE = 0.7;
+
 
 // ───────── Three.js ─────────
 const canvas = document.createElement('canvas');
 document.body.appendChild(canvas);
+
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -183,15 +234,18 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.6;
+renderer.toneMappingExposure = 1.0;
+
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e);
+scene.background = new THREE.Color(0x050510);
+
 
 // Camera: front-facing, slightly angled to see depth
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 14);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, -0.6, 17);
+camera.lookAt(0, -0.6, 0);
+
 
 // ───────── Lighting ─────────
 scene.add(new THREE.AmbientLight(0xffeedd, 1.0));
@@ -207,6 +261,7 @@ mainLight.shadow.camera.top = 10;
 mainLight.shadow.camera.bottom = -10;
 scene.add(mainLight);
 
+
 // Colorful interior fill lights
 const blueFill = new THREE.PointLight(0x4488ff, 0.8, 8);
 blueFill.position.set(-3, -2, 0);
@@ -215,74 +270,99 @@ const pinkFill = new THREE.PointLight(0xff44aa, 0.6, 8);
 pinkFill.position.set(3, -2, 0);
 scene.add(pinkFill);
 
+
 // ───────── Materials ─────────
-const matRed = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.5, metalness: 0.1 });
-const matGold = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.3, metalness: 0.75 });
-const matChrome = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.1, metalness: 0.95 });
-const matSteel = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.25, metalness: 0.9 });
+const matCyan = new THREE.MeshStandardMaterial({ color: 0x00d2ff, roughness: 0.1, metalness: 0.2 });
+const matYellow = new THREE.MeshStandardMaterial({ color: 0xffd800, roughness: 0.2, metalness: 0.4 });
+const matHeader = new THREE.MeshStandardMaterial({ color: 0x004e92, emissive: 0x00d2ff, emissiveIntensity: 0.5 });
+const matChrome = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.05, metalness: 1.0 });
+const matSteel = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.2, metalness: 0.8 });
 const matGlass = new THREE.MeshPhysicalMaterial({
-  color: 0xffffff, transparent: true, opacity: 0.08,
-  roughness: 0, metalness: 0, reflectivity: 1, clearcoat: 1,
+  color: 0xffffff, transparent: true, opacity: 0.1,
+  roughness: 0.01, metalness: 0.1, reflectivity: 1, clearcoat: 1,
   side: THREE.DoubleSide
 });
-const matPaper = new THREE.MeshStandardMaterial({ color: 0xfff9e6, roughness: 0.75 });
-const matCardboard = new THREE.MeshStandardMaterial({ color: 0xd4b896, roughness: 0.8 });
-const matChute = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 });
+const matPaper = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+const matBrand = new THREE.MeshStandardMaterial({ color: 0x3498db, roughness: 0.5 });
+const matCardboard = new THREE.MeshStandardMaterial({ color: 0xc4a484, roughness: 0.8 });
+const matChute = new THREE.MeshStandardMaterial({ color: 0x0a0a15, roughness: 0.4 });
+const matNeonBlue = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
+
 
 // ───────── Machine ─────────
 const machine = new THREE.Group();
 scene.add(machine);
 
-function box(w,h,d,mat,x,y,z) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
-  m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
-  machine.add(m); return m;
+
+function box(w, h, d, mat, x, y, z, parent = machine) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
 }
 
-// Base cabinet (below playing field)
-box(MW, 2.5, MD, matRed, 0, -MH/2 + 1.25, 0);
-// Top cabinet
-box(MW, 1, MD, matRed, 0, MH/2 - 1, 0);
+
+// Side Panels
+box(0.15, MH, MD, matCyan, -MW/2, 0, 0);
+box(0.15, MH, MD, matCyan, MW/2, 0, 0);
+
+
+// Base
+box(MW, 2.8, MD, matCyan, 0, -MH/2 + 1.4, 0);
+
+
+// Control Panel (slanted)
+const ctrlGroup = new THREE.Group();
+ctrlGroup.position.set(0, -MH/2 + 3.0, MD/2 + 0.4);
+ctrlGroup.rotation.x = -Math.PI / 10;
+machine.add(ctrlGroup);
+box(MW - 0.2, 0.4, 1.2, matYellow, 0, 0, 0, ctrlGroup);
+
+
+// Header (Logo area)
+box(MW + 0.2, 1.2, MD + 0.2, matHeader, 0, MH/2 - 0.5, 0);
+
+
 // Back wall
-box(MW, MH, 0.2, new THREE.MeshStandardMaterial({ color: 0x922b21 }), 0, 0, -MD/2 + 0.1);
-// Side walls
-for (const sx of [-1,1]) {
-  box(0.2, MH, MD, matRed, sx * (MW/2 - 0.1), 0, 0);
+box(MW, MH, 0.15, matCyan, 0, 0, -MD/2 + 0.1);
+
+
+// LED vertical strips
+for (const sx of [-1, 1]) {
+  for (const sz of [-1, 1]) {
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.06, MH - 1.2, 0.06), matNeonBlue);
+    led.position.set(sx * (MW/2 - 0.12), -0.5, sz * (MD/2 - 0.1));
+    machine.add(led);
+  }
 }
 
-// Gold trim strips
-box(MW, 0.15, 0.3, matGold, 0, -1.5, MD/2 - 0.2);
-box(MW, 0.15, 0.3, matGold, 0, 1.5, MD/2 - 0.2);
 
-// Prize chute (front lower, where prizes fall out)
-const chuteY = -MH/2 + 2.5;
-// Chute hole on the glass
-const chuteHole = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.8), matChute);
-chuteHole.position.set(0, chuteY, MD/2 - 0.01);
-machine.add(chuteHole);
-// Chute opening label
-const chuteLabel = document.createElement('div');
-chuteLabel.style.cssText = `
-  position:absolute; color:#fff; font-size:14px; font-weight:800;
-  background:rgba(231,76,60,0.8); padding:4px 12px; border-radius:6px;
-  transform:translateX(-50%); pointer-events:none;
-`;
-
-// Front glass panel
-const glass = new THREE.Mesh(new THREE.PlaneGeometry(MW, MH - 0.5), matGlass);
-glass.position.set(0, 0, MD/2 - 0.05);
-machine.add(glass);
-
-// Floor inside machine
-const floorY = -MH/2 + 2.5;
+// Floor
+const floorY = -MH/2 + 2.8;
 const floorMesh = new THREE.Mesh(
-  new THREE.PlaneGeometry(MW - 0.5, MD - 0.5),
-  new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.85 })
+  new THREE.PlaneGeometry(MW - 0.3, MD - 0.3),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a3a, roughness: 0.8 })
 );
 floorMesh.rotation.x = -Math.PI / 2;
 floorMesh.position.y = floorY + 0.01;
 floorMesh.receiveShadow = true;
 machine.add(floorMesh);
+
+
+// Front glass panel
+const glass = new THREE.Mesh(new THREE.PlaneGeometry(MW - 0.2, MH - 1.5), matGlass);
+glass.position.set(0, 0, MD/2 - 0.05);
+machine.add(glass);
+
+
+// Prize Chute Front Panel
+const chuteGroup = new THREE.Group();
+chuteGroup.position.set(0, -MH/2 + 1.2, MD/2 + 0.02);
+machine.add(chuteGroup);
+box(2.4, 1.6, 0.1, matYellow, 0, 0, 0, chuteGroup);
+const chuteHoleMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.0), matChute);
+chuteHoleMesh.position.set(0, 0, 0.06);
+chuteGroup.add(chuteHoleMesh);
+
 
 // ───────── Rail ─────────
 const railMesh = new THREE.Mesh(
@@ -293,62 +373,86 @@ railMesh.rotation.z = Math.PI / 2;
 railMesh.position.y = RAIL_Y;
 machine.add(railMesh);
 
+
 // ───────── Toilet Paper Rolls ─────────
 const tps = [];
-function createTP(x,y,z) {
+function createTP(x, y, z) {
   const g = new THREE.Group();
   
-  // Torus = rolled paper
-  const torus = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.22, 10, 20), matPaper.clone());
-  torus.rotation.y = Math.PI / 2;
-  torus.castShadow = true;
-  g.add(torus);
-  
-  // Cardboard inner ring
-  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.42, 12), matCardboard.clone());
-  core.rotation.z = Math.PI / 2;
+  // Outer roll
+  const paper = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.24, 0.44, 24),
+    matPaper
+  );
+  paper.rotation.x = Math.PI / 2;
+  paper.castShadow = true;
+  g.add(paper);
+
+
+  // Brand Label Strip
+  const label = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.25, 0.18, 24),
+    matBrand
+  );
+  label.rotation.x = Math.PI / 2;
+  label.castShadow = true;
+  g.add(label);
+ 
+  // Inner core
+  const core = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 0.45, 12),
+    matCardboard
+  );
+  core.rotation.x = Math.PI / 2;
   core.castShadow = true;
   g.add(core);
   
   g.position.set(x, y, z);
   g.rotation.y = Math.random() * Math.PI * 2;
+  g.rotation.x = (Math.random() - 0.5) * 0.4;
   g.rotation.z = (Math.random() - 0.5) * 0.4;
   scene.add(g);
-  
+ 
   return {
     mesh: g, x, y, z,
-    grabbed: false, won: false,
+    grabbed: false, won: false, rollingOut: false,
     vy: 0, vx: 0, vz: 0,
     mass: 0.5 + Math.random() * 0.3,
-    drag: 0.85,
-    rotSpeed: (Math.random() - 0.5) * 0.02
+    drag: 0.92,
+    rotSpeed: (Math.random() - 0.5) * 0.015
   };
 }
+
 
 const halfW = MW / 2 - 1.2;
 const halfD = MD / 2 - 1.2;
 for (let i = 0; i < TP_COUNT; i++) {
   const col = i % 6;
   const row = Math.floor(i / 6);
-  const x = -halfW + 0.8 + col * ((halfW * 2 - 1.6) / 5);
-  const y = floorY + 0.45 + row * 0.55 + (Math.random() - 0.5) * 0.05;
-  const z = -halfD + 0.8 + (Math.floor(col / 3) * 1.8) + (Math.random() - 0.5) * 0.4;
+  // Pile them more randomly
+  const x = -halfW + Math.random() * (halfW * 2);
+  const y = floorY + 0.45 + (Math.random() * 2.5);
+  const z = -halfD + Math.random() * (halfD * 2);
   tps.push(createTP(x, y, z));
 }
+
 
 // ───────── Claw ─────────
 const clawGroup = new THREE.Group();
 scene.add(clawGroup);
+
 
 // Cable
 const cableGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 6);
 const cableMesh = new THREE.Mesh(cableGeo, matSteel);
 clawGroup.add(cableMesh);
 
+
 // Hub
 const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.18, 0.18, 12), matChrome);
 hub.castShadow = true;
 clawGroup.add(hub);
+
 
 // Prongs
 const prongs = [];
@@ -372,6 +476,7 @@ for (let i = 0; i < 3; i++) {
   prongs.push(pg);
 }
 
+
 // ───────── State ─────────
 let credits = 10, won = 0;
 let state = 'idle';
@@ -381,10 +486,12 @@ let grabTarget = null;
 let msgTimer = 0;
 let inputX = 0, inputZ = 0;
 
+
 function updateUI() {
   document.getElementById('credits-val').textContent = credits;
   document.getElementById('won-val').textContent = won;
 }
+
 
 function showMsg(t) {
   const el = document.getElementById('float-msg');
@@ -392,6 +499,7 @@ function showMsg(t) {
   el.classList.add('show');
   msgTimer = 80;
 }
+
 
 // ───────── Controls ─────────
 document.addEventListener('keydown', e => {
@@ -406,8 +514,10 @@ document.addEventListener('keyup', e => {
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'w' || e.key === 's') inputZ = 0;
 });
 
+
 document.getElementById('grab-btn').addEventListener('touchstart', e => { e.preventDefault(); tryGrab(); });
 document.getElementById('grab-btn').addEventListener('click', tryGrab);
+
 
 document.querySelectorAll('.dpad-btn').forEach(btn => {
   const dir = btn.dataset.dir;
@@ -421,6 +531,7 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
   });
 });
 
+
 function tryGrab() {
   if (state === 'idle' && credits > 0) {
     credits--;
@@ -430,16 +541,19 @@ function tryGrab() {
   }
 }
 
+
 // ───────── Find Nearest TP ─────────
 function findTP(cx, cy, cz) {
   let best = null, bestD = Infinity;
   for (const t of tps) {
-    if (t.won) continue;
-    const d = Math.sqrt((t.x - cx)**2 + (t.y - (cy + 1.2))**2 + (t.z - cz)**2);
+    if (t.won || t.grabbed) continue;
+    // The "grasping point" is around 0.8 units below the claw hub
+    const d = Math.sqrt((t.x - cx)**2 + (t.y - (cy - 0.8))**2 + (t.z - cz)**2);
     if (d < SNAP_R && d < bestD) { bestD = d; best = t; }
   }
   return best;
 }
+
 
 // ───────── Update ─────────
 function update() {
@@ -460,11 +574,13 @@ function update() {
       clawY -= 0.06;
       clawOpen = THREE.MathUtils.clamp(clawOpen + 0.02, 0.1, 0.5);
       if (clawY <= floorY + 0.6) {
-        grabTarget = findTP(clawX, clawY, clawZ);
-        if (grabTarget && Math.random() < GRIP_RATE) {
+        let potential = findTP(clawX, clawY, clawZ);
+        if (potential && Math.random() < GRIP_RATE) {
+          grabTarget = potential;
           grabTarget.grabbed = true;
           showMsg('🎉 Got one!');
         } else {
+          grabTarget = null;
           showMsg('💨 Missed!');
         }
         state = 'closing';
@@ -475,16 +591,15 @@ function update() {
       clawOpen = THREE.MathUtils.clamp(clawOpen - 0.04, 0, 0.6);
       if (clawOpen <= 0.01) {
         clawOpen = 0;
-        // Start rise
         state = 'rising';
       }
       break;
       
     case 'rising':
       clawY += 0.055;
-      if (grabTarget) {
+      if (grabTarget && grabTarget.grabbed) {
         grabTarget.x = clawX;
-        grabTarget.y = clawY + 1.0;
+        grabTarget.y = clawY - 0.8;
         grabTarget.z = clawZ;
       }
       if (clawY >= RAIL_Y) {
@@ -494,16 +609,17 @@ function update() {
       break;
       
     case 'returning':
-      clawX *= 0.92;
-      clawZ = THREE.MathUtils.lerp(clawZ, 0, 0.04);
-      if (grabTarget) {
+      clawX *= 0.94;
+      // Move to the front chute (Z > 1.5)
+      clawZ = THREE.MathUtils.lerp(clawZ, 1.8, 0.06);
+      if (grabTarget && grabTarget.grabbed) {
         grabTarget.x = clawX;
-        grabTarget.y = clawY + 1.0;
+        grabTarget.y = clawY - 0.8;
         grabTarget.z = clawZ;
       }
-      if (Math.abs(clawX) < 0.08) {
+      if (Math.abs(clawX) < 0.08 && Math.abs(clawZ - 1.8) < 0.08) {
         clawX = 0;
-        clawZ = 0;
+        clawZ = 1.8;
         if (grabTarget) {
           grabTarget.grabbed = false;
           grabTarget.vy = -0.015;
@@ -522,17 +638,33 @@ function update() {
         grabTarget.x += (clawX - grabTarget.x) * 0.05;
         grabTarget.z += (clawZ - grabTarget.z) * 0.05;
         
-        if (clamp(grabTarget.y, floorY + 0.3, -1000)) {
-          grabTarget.y = floorY + 0.3;
-          grabTarget.vy = 0;
-          if (Math.abs(clawZ) < 1.8) {
-            grabTarget.won = true;
-            won++;
-            showMsg('🧻 Prize Collected!');
-            updateUI();
+        if (grabTarget.y <= floorY + 0.3) {
+          // The bin area is at the front center (x=0, z~2)
+          const inBin = Math.abs(grabTarget.x) < 1.3 && grabTarget.z > 1.3;
+          
+          if (inBin) {
+             // Animate falling deeper through the chute
+             if (grabTarget.y > floorY - 0.8) {
+                grabTarget.y -= 0.12;
+             } else {
+                // Now start the "rolling out" phase
+                grabTarget.rollingOut = true;
+                grabTarget.vx = 0;
+                grabTarget.vy = -0.05;
+                grabTarget.vz = 0.15; // Move towards camera
+                won++;
+                updateUI();
+                showMsg('🎉 Prize Collected!');
+                grabTarget = null;
+                state = 'idle';
+             }
+          } else {
+             // Fell back into the machine
+             grabTarget.y = floorY + 0.45;
+             grabTarget.vy = 0;
+             grabTarget = null;
+             state = 'idle';
           }
-          grabTarget = null;
-          state = 'idle';
         }
       }
       break;
@@ -553,16 +685,34 @@ function update() {
   
   // Update TP meshes
   for (const t of tps) {
-    if (!t.grabbed && !t.won) {
+    if (t.won) {
+      t.mesh.visible = false;
+      continue;
+    }
+    if (t.rollingOut) {
+      // Roll out of the chute towards the camera
+      t.y += t.vy;
+      t.z += t.vz;
+      t.mesh.rotation.x += 0.2; // Rolling motion
+      t.mesh.position.set(t.x, t.y, t.z);
+      
+      // Once it's far enough out, hide it
+      if (t.z > 6) {
+        t.won = true;
+        t.rollingOut = false;
+      }
+    } else {
+      if (t.grabbed) {
+         // Slight wiggle when grabbed
+         t.mesh.rotation.z = Math.sin(Date.now() * 0.01) * 0.1;
+      }
       t.mesh.position.set(t.x, t.y, t.z);
       t.mesh.rotation.y += t.rotSpeed;
     }
   }
 }
 
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-// ───────── Render ─────────
+// ── Render Loop ──
 function animate() {
   requestAnimationFrame(animate);
   update();
