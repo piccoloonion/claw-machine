@@ -3,502 +3,676 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Claw Machine</title>
+<title>Toilet Paper Claw Machine</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #1a1a2e;
+    background: #000;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    font-family: 'Segoe UI', Arial, sans-serif;
     overflow: hidden;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     touch-action: none;
-    -webkit-touch-callout: none;
     -webkit-user-select: none;
-    user-select: none;
+    userSelect: none;
   }
-  canvas {
-    border-radius: 8px;
-    box-shadow: 0 0 40px rgba(80, 120, 255, 0.3);
-    max-width: 100vw;
-    max-height: 100vh;
-    object-fit: contain;
+  canvas { display: block; width: 100vw; height: 100vh; }
+  
+  #ui {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  #score-panel {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .badge {
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  
+  .badge.credits { border-color: #e74c3c; }
+  .badge.credits span { color: #e74c3c; font-size: 18px; }
+  .badge.won { border-color: #2ecc71; }
+  .badge.won span { color: #2ecc71; }
+  
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 42px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+  }
+  #message.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  #controls-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    text-align: center;
+  }
+  
+  #grab-btn {
+    position: absolute;
+    bottom: 80px;
+    right: 30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ff4757, #c0392b);
+    border: 3px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 6px 25px rgba(231, 76, 60, 0.5);
+    transition: transform 0.1s, box-shadow 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #grab-btn:active {
+    transform: scale(0.9);
+    box-shadow: 0 3px 15px rgba(231, 76, 60, 0.4);
+  }
+  
+  #left-pad {
+    position: absolute;
+    bottom: 60px;
+    left: 30px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #left-pad::after {
+    content: '◀ ▶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.3);
+    font-size: 18px;
+    letter-spacing: 6px;
   }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<script>
-//
-// CONFIG: Swap prize sets — add as many as you want
-//
-const PRIZE_SETS = {
-  pokemon: {
-    name: 'Pocket Monsters',
-    prizes: [
-      { color: '#ff6b6b', size: 28, weight: 0.4, label: '🔴' },
-      { color: '#4ecdc4', size: 32, weight: 0.4, label: '🟢' },
-      { color: '#ffd93d', size: 26, weight: 0.35, label: '⚡' },
-      { color: '#6c5ce7', size: 30, weight: 0.45, label: '🟣' },
-      { color: '#ff9ff3', size: 24, weight: 0.3, label: '💗' },
-      { color: '#00cec9', size: 34, weight: 0.5, label: '🟤' },
-      { color: '#fd79a8', size: 22, weight: 0.35, label: '🐾' },
-      { color: '#e17055', size: 36, weight: 0.55, label: '🔥' },
-      { color: '#00b894', size: 28, weight: 0.4, label: '🌿' },
-      { color: '#a29bfe', size: 30, weight: 0.45, label: '💎' },
-      { color: '#ffeaa7', size: 26, weight: 0.35, label: '⭐' },
-      { color: '#55a3f5', size: 32, weight: 0.5, label: '💧' },
-    ],
-  },
-  toiletpaper: {
-    name: 'Toilet Paper',
-    prizes: [
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#ffeaa7', size: 24, weight: 0.15, label: '🧻', drag: 0.92 },
-      { color: '#fdcb6e', size: 24, weight: 0.12, label: '✨', drag: 0.95 },
-      { color: '#fdcb6e', size: 24, weight: 0.12, label: '✨', drag: 0.95 },
-    ],
-  }
-};
+<div id="ui">
+  <div id="score-panel">
+    <div class="badge credits">Credits: <span id="credits-val">10</span></div>
+    <div class="badge won">Won: <span id="won-val">0</span></div>
+  </div>
+  <div id="message"></div>
+  <div id="controls-hint">← → to move  |  SPACE or tap button to grab</div>
+  <div id="left-pad"></div>
+  <button id="grab-btn">GRAB</button>
+</div>
 
-// Pick a prize set — swap this anytime
-const PRIZE_SET = PRIZE_SETS.pokemon;
-// const PRIZE_SET = PRIZE_SETS.toiletpaper;
-
-//
-// Canvas Setup
-//
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const W = 720;
-const H = 1280;
-canvas.width = W;
-canvas.height = H;
-
-//
-// Constants
-//
-const MACHINE = {
-  x: 40, y: 40, width: W - 80, height: H - 120,
-  glassWidth: W - 120, glassHeight: H - 300,
-  clawRailY: 80,
-  clawHeight: 80,
-  clawWidth: 100,
-};
-const CLAW_CENTER = { x: W / 2, y: MACHINE.clawRailY + 20 };
-const PRIZE_AREA_TOP = 280;
-const CHUTE_W = 140;
-const CHUTE_X = (W - CHUTE_W) / 2;
-const CHUTE_Y = MACHINE.y + MACHINE.height - 20;
-const CLAW_SPEED_H = 4;
-const CLAW_SPEED_V = 3.5;
-const SNAP_RADIUS = 55;
-const GRIP_CHANCE = 0.70;
-
-//
-// Game State
-//
-let credits = 10;
-let prizesWon = [];
-let gameState = 'idle'; // idle | dropping | grabbing | rising | returning | dropping_prize | win
-let clawX = W / 2;
-let clawY = MACHINE.clawRailY + 20;
-let clawOpen = true;
-let clawGrabbed = null;
-let dropTargetX = W / 2;
-let dropX = W / 2;
-let dropY = 0;
-let message = '';
-let messageTimer = 0;
-
-//
-// Prizes
-//
-const prizes = [];
-
-function spawnPrizes() {
-  const count = PRIZE_SET.prizes.length;
-  const cols = 4;
-  const rows = Math.ceil(count / cols);
-  const spacingX = (MACHINE.glassWidth - 60) / cols;
-  const spacingY = 40;
-  const startX = 80 + 30;
-
-  for (let i = 0; i < count; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const def = PRIZE_SET.prizes[i];
-    prizes.push({
-      x: startX + col * spacingX + (row % 2) * (spacingX / 2),
-      y: MACHINE.y + MACHINE.height - 160 - row * 40,
-      radius: def.size,
-      color: def.color,
-      weight: def.weight,
-      drag: def.drag || 0.7,
-      label: def.label || '🎁',
-      grabbed: false,
-      vy: 0,
-      vx: 0,
-    });
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
   }
 }
-spawnPrizes();
+</script>
 
-//
-// Controls
-//
-let inputX = 0; // -1 or 1
-let inputDrop = false;
+<script type="module">
+import * as THREE from 'three';
 
-// Desktop
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') inputX = -1;
-  if (e.key === 'ArrowRight') inputX = 1;
-  if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
-    handleDrop();
+// ── Config ──
+const CLAW_SPEED = 0.06;
+const DROP_SPEED = 0.04;
+const RISE_SPEED = 0.045;
+const RETURN_SPEED = 0.04;
+const SNAP_RADIUS = 1.2;
+const GRIP_CHANCE = 0.7;
+const MACHINE_W = 10;
+const MACHINE_H = 12;
+const MACHINE_D = 6;
+const TOILET_PAPER_COUNT = 18;
+
+// ── State ──
+let credits = 10;
+let wonCount = 0;
+let gameState = 'idle'; // idle | dropping | grabbing | rising | returning | dropping_prize | win
+let clawX = 0;
+let clawY = MACHINE_H / 2 - 1;
+let clawZ = 0;
+let clawAngle = 0.6; // how open the claw is (0=closed, 0.6=open)
+let grabbedTP = null;
+let messageTimer = 0;
+
+// ── Three.js Setup ──
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111122);
+scene.fog = new THREE.Fog(0x111122, 20, 35);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(6, 10, 12);
+camera.lookAt(0, 2, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// ── Lighting ──
+const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+scene.add(ambientLight);
+
+const mainLight = new THREE.DirectionalLight(0xffeedd, 1.5);
+mainLight.position.set(5, 15, 8);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set(1024, 1024);
+mainLight.shadow.camera.near = 1;
+mainLight.shadow.camera.far = 30;
+mainLight.shadow.camera.left = -10;
+mainLight.shadow.camera.right = 10;
+mainLight.shadow.camera.top = 10;
+mainLight.shadow.camera.bottom = -10;
+scene.add(mainLight);
+
+// Neon accent lights inside the machine
+const neonBlue = new THREE.PointLight(0x4169E1, 2, 10);
+neonBlue.position.set(-3, 0, 0);
+scene.add(neonBlue);
+
+const neonPink = new THREE.PointLight(0xFF1493, 1.5, 10);
+neonPink.position.set(3, 0, 0);
+scene.add(neonPink);
+
+// ── Materials ──
+const metalMat = new THREE.MeshStandardMaterial({ 
+  color: 0x888888, metalness: 0.9, roughness: 0.2 
+});
+const chromeMat = new THREE.MeshStandardMaterial({ 
+  color: 0xffffff, metalness: 1, roughness: 0.15 
+});
+const redMat = new THREE.MeshStandardMaterial({ 
+  color: 0xE74C3C, metalness: 0.3, roughness: 0.5 
+});
+const goldMat = new THREE.MeshStandardMaterial({ 
+  color: 0xFFD700, metalness: 0.8, roughness: 0.3 
+});
+const glassMat = new THREE.MeshPhysicalMaterial({ 
+  color: 0xffffff, metalness: 0, roughness: 0,
+  transmission: 0.95, transparent: true, opacity: 0.25,
+  ior: 1.5, thickness: 0.5
+});
+const tpPaperMat = new THREE.MeshStandardMaterial({ 
+  color: 0xFFFEF5, roughness: 0.8, metalness: 0 
+});
+const tpCardboardMat = new THREE.MeshStandardMaterial({ 
+  color: 0xD2B48C, roughness: 0.9, metalness: 0 
+});
+
+// ── Machine Body ──
+const machineGroup = new THREE.Group();
+scene.add(machineGroup);
+
+// Base cabinet
+const baseGeo = new THREE.BoxGeometry(MACHINE_W, 2, MACHINE_D);
+const base = new THREE.Mesh(baseGeo, redMat.clone());
+base.position.y = -MACHINE_H / 2 + 1;
+base.castShadow = true;
+base.receiveShadow = true;
+machineGroup.add(base);
+
+// Top cabinet
+const topGeo = new THREE.BoxGeometry(MACHINE_W, 1, MACHINE_D);
+const top = new THREE.Mesh(topGeo, redMat.clone());
+top.position.y = MACHINE_H / 2 - 0.5;
+top.castShadow = true;
+machineGroup.add(top);
+
+// Pillars
+function makePillar(x, z) {
+  const geo = new THREE.BoxGeometry(0.3, MACHINE_H, 0.3);
+  const m = new THREE.Mesh(geo, goldMat.clone());
+  m.position.set(x, 0, z);
+  m.castShadow = true;
+  machineGroup.add(m);
+}
+makePillar(-MACHINE_W/2, -MACHINE_D/2);
+makePillar(MACHINE_W/2, -MACHINE_D/2);
+makePillar(-MACHINE_W/2, MACHINE_D/2);
+makePillar(MACHINE_W/2, MACHINE_D/2);
+
+// Back wall
+const backGeo = new THREE.PlaneGeometry(MACHINE_W, MACHINE_H);
+const backWallMat = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.6 });
+const backWall = new THREE.Mesh(backGeo, backWallMat);
+backWall.position.set(0, 0, -MACHINE_D/2 + 0.1);
+backWall.receiveShadow = true;
+machineGroup.add(backWall);
+
+// Side walls
+const sideGeo = new THREE.PlaneGeometry(MACHINE_D, MACHINE_H);
+for (const x of [-MACHINE_W/2, MACHINE_W/2]) {
+  const side = new THREE.Mesh(sideGeo, redMat.clone());
+  side.position.set(x, 0, 0);
+  side.rotation.y = Math.PI / 2;
+  side.receiveShadow = true;
+  machineGroup.add(side);
+}
+
+// Front glass
+const glassGeo = new THREE.PlaneGeometry(MACHINE_W, MACHINE_H);
+const glass = new THREE.Mesh(glassGeo, glassMat);
+glass.position.set(0, 0, MACHINE_D/2 - 0.1);
+machineGroup.add(glass);
+
+// Prize chute opening
+const chuteGeo = new THREE.BoxGeometry(3, 0.8, 0.5);
+const chuteMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+const chute = new THREE.Mesh(chuteGeo, chuteMat);
+chute.position.set(0, -MACHINE_H/2 + 3.5, MACHINE_D/2 - 0.3);
+machineGroup.add(chute);
+
+// ── Rail ──
+const railGeo = new THREE.CylinderGeometry(0.1, 0.1, MACHINE_W, 12);
+const rail = new THREE.Mesh(railGeo, chromeMat.clone());
+rail.rotation.z = Math.PI / 2;
+rail.position.y = MACHINE_H / 2 - 1.5;
+machineGroup.add(rail);
+
+// ── Toilet Paper Rolls ──
+const toiletPapers = [];
+
+function createTP(x, y, z) {
+  const group = new THREE.Group();
+  
+  // Roll body (torus + cylinder combo)
+  const outerGeo = new THREE.TorusGeometry(0.35, 0.3, 12, 20);
+  const outer = new THREE.Mesh(outerGeo, tpPaperMat.clone());
+  outer.rotation.y = Math.PI / 2;
+  outer.castShadow = true;
+  group.add(outer);
+  
+  // Cardboard core
+  const coreGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.55, 12);
+  const core = new THREE.Mesh(coreGeo, tpCardboardMat.clone());
+  core.rotation.z = Math.PI / 2;
+  core.castShadow = true;
+  group.add(core);
+  
+  // Slight random rotation for natural look
+  group.rotation.y = Math.random() * Math.PI * 2;
+  group.rotation.z = (Math.random() - 0.5) * 0.3;
+  
+  group.position.set(x, y, z);
+  scene.add(group);
+  
+  return {
+    mesh: group,
+    x, y, z,
+    grabbed: false,
+    vy: 0,
+    vx: 0,
+    vz: 0,
+    mass: 0.3 + Math.random() * 0.2,
+    drag: 0.92,
+    won: false
+  };
+}
+
+function spawnTP() {
+  const halfW = MACHINE_W / 2 - 1.2;
+  const halfD = MACHINE_D / 2 - 1.2;
+  const floorY = -MACHINE_H / 2 + 2.5;
+  
+  for (let i = 0; i < TOILET_PAPER_COUNT; i++) {
+    const row = Math.floor(i / 5);
+    const col = i % 5;
+    const x = -halfW + (col + 0.5) * (halfW * 2 / 5);
+    const y = floorY + row * 0.7 + (Math.random() - 0.5) * 0.15;
+    const z = -halfD + 1 + (Math.floor(col / 3)) * 2 + (Math.random() - 0.5) * 0.5;
+    toiletPapers.push(createTP(x, y, z));
   }
+}
+spawnTP();
+
+// ── Claw ──
+const clawGroup = new THREE.Group();
+scene.add(clawGroup);
+
+// Cable
+const cableGeo = new THREE.CylinderGeometry(0.04, 0.04, 2, 6);
+const cable = new THREE.Mesh(cableGeo, metalMat);
+cable.castShadow = true;
+clawGroup.add(cable);
+
+// Claw hub
+const hubGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.2, 12);
+const hub = new THREE.Mesh(hubGeo, chromeMat);
+hub.position.y = -1;
+hub.castShadow = true;
+clawGroup.add(hub);
+
+// Prongs (3 claws)
+const prongs = [];
+function makeProng(index) {
+  const angle = (index / 3) * Math.PI * 2;
+  const prongGroup = new THREE.Group();
+  
+  // Arm
+  const armGeo = new THREE.CylinderGeometry(0.06, 0.05, 0.8, 8);
+  const arm = new THREE.Mesh(armGeo, metalMat);
+  arm.position.y = -0.4;
+  arm.castShadow = true;
+  prongGroup.add(arm);
+  
+  // Tip (curved)
+  const tipGeo = new THREE.TorusGeometry(0.15, 0.04, 8, 8, Math.PI);
+  const tip = new THREE.Mesh(tipGeo, metalMat);
+  tip.position.set(0, -0.85, 0);
+  tip.rotation.z = Math.PI;
+  tip.castShadow = true;
+  prongGroup.add(tip);
+  
+  prongGroup.position.set(Math.cos(angle) * 0.25, -1, Math.sin(angle) * 0.25);
+  prongGroup.rotation.x = 0.3;
+  prongGroup.userData.baseAngle = 0.3;
+  prongGroup.userData.angle = angle;
+  clawGroup.add(prongGroup);
+  prongs.push(prongGroup);
+}
+makeProng(0);
+makeProng(1);
+makeProng(2);
+
+clawGroup.position.set(0, clawY, 0);
+
+// ── Shadow floor ──
+const floorGeo = new THREE.PlaneGeometry(30, 30);
+const floorMat = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.9 });
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -8;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// ── Stars (background particles) ──
+const starGeo = new THREE.BufferGeometry();
+const starCount = 200;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  starPos[i*3] = (Math.random() - 0.5) * 40;
+  starPos[i*3+1] = Math.random() * 20 - 5;
+  starPos[i*3+2] = -10 - Math.random() * 15;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08 });
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+// ── Controls ──
+let inputX = 0;
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') inputX = -1;
+  if (e.key === 'ArrowRight' || e.key === 'd') inputX = 1;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); handleGrab(); }
 });
 document.addEventListener('keyup', e => {
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'a' || e.key === 'd') inputX = 0;
 });
 
-// Touch — left half moves claw, right half is drop
-let touchStartX = null;
-
-canvas.addEventListener('touchstart', e => {
+// Touch: left pad
+const leftPad = document.getElementById('left-pad');
+leftPad.addEventListener('touchstart', (e) => { e.preventDefault(); });
+leftPad.addEventListener('touchmove', (e) => {
   e.preventDefault();
-  for (const touch of e.changedTouches) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (touch.clientX - rect.left) * (W / rect.width);
-    const y = (touch.clientY - rect.top) * (H / rect.height);
-    if (x < W / 2) {
-      touchStartX = x;
-    } else {
-      handleDrop();
-    }
-  }
+  const touch = e.touches[0];
+  const rect = leftPad.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const dx = touch.clientX - cx;
+  inputX = dx > 15 ? 1 : dx < -15 ? -1 : 0;
 });
+leftPad.addEventListener('touchend', () => { inputX = 0; });
 
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (touchStartX !== null) {
-    for (const touch of e.changedTouches) {
-      const rect = canvas.getBoundingClientRect();
-      const x = (touch.clientX - rect.left) * (W / rect.width);
-      const dx = x - touchStartX;
-      inputX = dx > 20 ? 1 : dx < -20 ? -1 : 0;
-    }
-  }
-});
+// Touch: grab button
+document.getElementById('grab-btn').addEventListener('touchstart', (e) => { e.preventDefault(); handleGrab(); });
+document.getElementById('grab-btn').addEventListener('click', handleGrab);
 
-canvas.addEventListener('touchend', e => {
-  touchStartX = null;
-  inputX = 0;
-});
-
-function handleDrop() {
+function handleGrab() {
   if (gameState === 'idle' && credits > 0) {
     credits--;
+    updateUI();
     gameState = 'dropping';
-    clawOpen = false;
-    clawGrabbed = null;
+    clawAngle = 0.6;
+    grabbedTP = null;
   }
 }
 
-//
-// Collision detection — circular colliders
-//
-function nearestPrize(clawPos) {
+function showMessage(text) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.classList.add('show');
+  messageTimer = 90;
+}
+
+function updateUI() {
+  document.getElementById('credits-val').textContent = credits;
+  document.getElementById('won-val').textContent = wonCount;
+}
+
+// ── Find nearest TP ──
+function findNearestTP(cx, cy, cz) {
   let nearest = null;
   let minDist = Infinity;
-  for (const p of prizes) {
-    const dx = p.x - clawPos.x;
-    const dy = p.y - (clawPos.y - 10);
-    const dist = Math.sqrt(dx * dx + dy * dy);
+  for (const tp of toiletPapers) {
+    if (tp.won) continue;
+    const dx = tp.x - cx;
+    const dy = tp.y - (cy + 1.5);
+    const dz = tp.z - cz;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
     if (dist < SNAP_RADIUS && dist < minDist) {
       minDist = dist;
-      nearest = p;
+      nearest = tp;
     }
   }
   return nearest;
 }
 
-//
-// Update Logic
-//
-function update() {
-  if (messageTimer > 0) messageTimer--;
-  if (messageTimer === 0) message = '';
+// ── Update ──
+const clock = new THREE.Clock();
 
-  // Horizontal movement
-  if (gameState === 'idle') {
-    clawX += inputX * CLAW_SPEED_H;
-    clawX = Math.max(MACHINE.x + 80, Math.min(MACHINE.x + MACHINE.glassWidth - 20, clawX));
+function update() {
+  if (messageTimer > 0) {
+    messageTimer--;
+    if (messageTimer === 0) {
+      document.getElementById('message').classList.remove('show');
+    }
   }
 
   switch (gameState) {
+    case 'idle':
+      clawX += inputX * CLAW_SPEED;
+      clawX = Math.max(-MACHINE_W/2 + 1, Math.min(MACHINE_W/2 - 1, clawX));
+      clawZ += inputX * CLAW_SPEED * 0.3; // slight depth movement
+      clawZ = Math.max(-MACHINE_D/2 + 1.5, Math.min(MACHINE_D/2 - 1, clawZ));
+      clawAngle = 0.6;
+      break;
+
     case 'dropping':
-      clawY += CLAW_SPEED_V;
-      if (clawY >= MACHINE.y + MACHINE.height - 150) {
-        gameState = 'grabbing';
-        clawGrabbed = nearestPrize({ x: clawX, y: clawY });
-        if (clawGrabbed) {
-          if (Math.random() < GRIP_CHANCE) {
-            clawGrabbed.grabbed = true;
-            message = 'Got it! 🎉';
-          } else {
-            message = 'Slipped! 😩';
-            clawGrabbed = null;
-          }
+      clawY -= DROP_SPEED;
+      if (clawY <= -MACHINE_H/2 + 3) {
+        grabbedTP = findNearestTP(clawX, clawY, clawZ);
+        if (grabbedTP && Math.random() < GRIP_CHANCE) {
+          grabbedTP.grabbed = true;
+          showMessage('🎉 Got it!');
         } else {
-          message = 'Missed!';
+          grabTP = null;
+          showMessage('💨 Slipped!');
         }
-        messageTimer = 60;
+        gameState = 'grabbing';
       }
       break;
 
     case 'grabbing':
-      if (messageTimer-- > 0) break;
-      gameState = 'rising';
+      if (clawAngle > 0) {
+        clawAngle -= 0.02;
+      } else {
+        clawAngle = 0;
+        clawY = -MACHINE_H/2 + 3;
+        gameState = 'rising';
+      }
       break;
 
     case 'rising':
-      clawY -= CLAW_SPEED_V * (1 + (clawGrabbed ? clawGrabbed.weight * 0.3 : 0));
-      if (clawGrabbed) {
-        clawGrabbed.x = clawX;
-        clawGrabbed.y = clawY - 10;
+      clawY += RISE_SPEED;
+      if (grabbedTP) {
+        grabbedTP.x = clawX;
+        grabbedTP.y = clawY + 1.2;
+        grabbedTP.z = clawZ;
       }
-      if (clawY <= MACHINE.clawRailY + 20) {
-        clawY = MACHINE.clawRailY + 20;
+      if (clawY >= MACHINE_H/2 - 1.5) {
+        clawY = MACHINE_H/2 - 1.5;
         gameState = 'returning';
-        dropX = clawX;
-        dropY = clawY + 30;
       }
       break;
 
     case 'returning':
-      clawX = clawX + (W / 2 - clawX) * 0.05;
-      if (clawGrabbed) {
-        clawGrabbed.x = clawX;
-        clawGrabbed.y = clawY - 10;
+      // Move claw back to center
+      clawX *= 0.95;
+      clawZ *= 0.95;
+      if (grabbedTP) {
+        grabbedTP.x = clawX;
+        grabbedTP.y = clawY + 1.2;
+        grabbedTP.z = clawZ;
       }
-      if (Math.abs(clawX - W / 2) < 5) {
-        clawX = W / 2;
-        if (clawGrabbed) {
+      if (Math.abs(clawX) < 0.1) {
+        clawX = 0;
+        clawZ = 0;
+        if (grabbedTP) {
+          grabbedTP.grabbed = false;
+          grabbedTP.vy = -0.02;
           gameState = 'dropping_prize';
-          clawGrabbed.grabbed = false;
-          clawGrabbed.vy = 1;
         } else {
+          showMessage('Missed!');
           gameState = 'idle';
         }
-        message = clawGrabbed ? 'Prize collected! 🎁' : 'Nothing caught!';
-        messageTimer = 90;
       }
       break;
 
     case 'dropping_prize':
-      if (clawGrabbed) {
-        clawGrabbed.vy += 0.3;
-        clawGrabbed.y += clawGrabbed.vy * clawGrabbed.drag;
-        if (clawGrabbed.y >= MACHINE.y + MACHINE.height - 70) {
-          clawGrabbed.y = MACHINE.y + MACHINE.height - 70;
-          clawGrabbed.vy = 0;
-          clawGrabbed.grabbed = false;
-          prizesWon.push(clawGrabbed.label);
-          clawGrabbed = null;
-          gameState = 'idle';
+      if (grabbedTP) {
+        grabbedTP.vy -= 0.015 * grabbedTP.mass;
+        grabbedTP.vy *= grabbedTP.drag;
+        grabbedTP.y += grabbedTP.vy;
+        
+        if (grabbedTP.y <= -MACHINE_H/2 + 2.2) {
+          grabbedTP.y = -MACHINE_H/2 + 2.2;
+          grabbedTP.vy = 0;
+          grabbedTP.vy *= -0.3; // slight bounce
+          
+          if (Math.abs(grabbedTP.vy) < 0.005) {
+            grabbedTP.vy = 0;
+            if (Math.abs(clawZ) < 1.8) {
+              grabbedTP.won = true;
+              wonCount++;
+              showMessage('🧻 Prize Collected!');
+              updateUI();
+            }
+            grabbedTP = null;
+            gameState = 'idle';
+          }
         }
       }
       break;
-
-    default:
-      break;
-  }
-}
-
-//
-// Drawing
-//
-function drawMachine() {
-  // Machine body
-  const m = MACHINE;
-  const frameLeft = m.x;
-  const frameRight = m.x + m.width;
-
-  // Outer frame
-  ctx.fillStyle = '#e74c3c';
-  ctx.beginPath();
-  ctx.roundRect(frameLeft, m.y, m.width, m.height, 16);
-  ctx.fill();
-
-  // Top arch
-  ctx.fillStyle = '#c0392b';
-  ctx.beginPath();
-  ctx.roundRect(frameLeft - 10, m.y - 20, m.width + 20, 60, [16, 16, 0, 0]);
-  ctx.fill();
-
-  // Title
-  ctx.fillStyle = '#FFE66D';
-  ctx.font = 'bold 32px Segoe UI, Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('CLAW MACHINE', W / 2, m.y + 18);
-
-  // Glass area
-  ctx.fillStyle = 'rgba(0, 20, 40, 0.5)';
-  ctx.fillRect(frameLeft + 20, m.y + 50, m.glassWidth, m.glassHeight - 40);
-
-  // Chute
-  ctx.fillStyle = '#f39c12';
-  ctx.beginPath();
-  ctx.roundRect(CHUTE_X, CHUTE_Y, CHUTE_W, 60, 8);
-  ctx.fillRect(CHUTE_X, CHUTE_Y - 20, CHUTE_W, 30);
-  ctx.fill();
-  ctx.fillStyle = '#7f1a00';
-  ctx.font = '16px Segoe UI, Arial';
-  ctx.fillText('PRIZE CHUTE', CHUTE_X + CHUTE_W / 2, CHUTE_Y + 35);
-
-  // Side rails
-  ctx.fillStyle = '#c0392b';
-  ctx.fillRect(frameLeft, m.y + 50, 20, m.glassHeight - 40);
-  ctx.fillRect(frameRight - 20, m.y + 50, 20, m.glassHeight - 40);
-}
-
-function drawClaw() {
-  const cx = clawX;
-  const cy = clawY;
-
-  // Cable
-  ctx.strokeStyle = '#777';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(cx, MACHINE.clawRailY);
-  ctx.lineTo(cx, cy);
-  ctx.stroke();
-
-  // Claw body
-  ctx.fillStyle = '#888';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#aaa';
-  ctx.beginPath();
-  ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Prongs
-  const openAngle = clawOpen ? 0.5 : 0;
-  ctx.fillStyle = '#777';
-  for (let i = -1; i <= 1; i++) {
-    ctx.save();
-    ctx.translate(cx, cy + 12);
-    ctx.rotate(i * (0.3 + openAngle));
-    ctx.fillRect(-2, 0, 4, 35);
-    ctx.beginPath();
-    ctx.arc(0, 35, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-function drawPrize(p) {
-  // Circle
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-  ctx.fillStyle = p.color;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Label
-  ctx.font = '20px Segoe UI Emoji';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(p.label, p.x, p.y);
-}
-
-function drawUI() {
-  // Credits
-  ctx.fillStyle = '#e74c3c';
-  ctx.beginPath();
-  ctx.roundRect(W - 200, H - 80, 160, 60, 12);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 24px Segoe UI, Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText(`CREDITS: ${credits}`, W - 120, H - 45);
-
-  // Drop button (mobile visual hint)
-  ctx.fillStyle = '#2ecc71';
-  ctx.beginPath();
-  ctx.roundRect(W - 200, 900, 160, 80, 12);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 28px Segoe UI, Arial';
-  ctx.fillText('GRAB!', W - 120, 945);
-
-  // Message
-  if (message && messageTimer > 0) {
-    const alpha = Math.min(1, messageTimer / 15);
-    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-    ctx.font = 'bold 40px Segoe UI, Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(message, W / 2, 400);
   }
 
-  // Prize set label
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.font = '16px Segoe UI, Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Prize Set: ${PRIZE_SET.name} (swap in config)`, 50, H - 40);
-
-  // Won prizes
-  if (prizesWon.length > 0) {
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-    ctx.textAlign = 'right';
-    ctx.font = '20px Segoe UI Emoji';
-    ctx.textAlign = 'right';
-    ctx.fillText(`Won: ${prizesWon.join(' ')}`, W - 220, H - 100);
+  // Update claw visual
+  clawGroup.position.x = clawX;
+  clawGroup.position.y = clawY;
+  clawGroup.position.z = clawZ;
+  
+  // Update cable length
+  const cableLen = MACHINE_H/2 - 1.5 - clawY;
+  cable.scale.y = cableLen;
+  cable.position.y = -cableLen / 2 - 1;
+  
+  // Animate prongs opening/closing
+  for (const prong of prongs) {
+    const spread = clawAngle;
+    prong.position.x = Math.cos(prong.userData.angle) * (0.25 + spread * 0.5);
+    prong.position.z = Math.sin(prong.userData.angle) * (0.25 + spread * 0.5);
   }
+  
+  // Update TP positions
+  for (const tp of toiletPapers) {
+    if (!tp.grabbed && !tp.won) {
+      tp.mesh.position.set(tp.x, tp.y, tp.z);
+      tp.mesh.rotation.y += 0.005;
+    }
+  }
+  
+  // Animate neon lights
+  const t = clock.getElapsedTime();
+  neonBlue.intensity = 1.5 + Math.sin(t * 2) * 0.5;
+  neonPink.intensity = 1 + Math.sin(t * 3 + 1) * 0.5;
+  stars.rotation.y += 0.0002;
+  
+  updateUI();
 }
 
-//
-// Main Loop
-//
-function loop() {
-  ctx.clearRect(0, 0, W, H);
-
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0f0c29');
-  bg.addColorStop(0.5, '#302b63');
-  bg.addColorStop(1, '#24243e');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  drawMachine();
-  prizes.forEach(drawPrize);
-  drawClaw();
-  drawUI();
-
+// ── Render Loop ──
+function animate() {
+  requestAnimationFrame(animate);
   update();
-  requestAnimationFrame(loop);
+  renderer.render(scene, camera);
 }
 
-loop();
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 </body>
 </html>
