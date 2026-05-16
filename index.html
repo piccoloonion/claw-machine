@@ -190,10 +190,36 @@
     #grab-btn { bottom: 20px; right: 15px; width: 85px; height: 85px; font-size: 16px; border-width: 3px; }
     #float-msg { font-size: 32px; top: 40%; }
     #hint { font-size: 11px; bottom: 8px; opacity: 0.7; }
+  
+  }
+
+  /* ─── Ad Banner ─── */
+  #ad-banner {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 20;
+    background: rgba(10,10,26,0.85);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
+  }
+  #ad-banner .ad-placeholder {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
   }
 </style>
 </head>
 <body>
+
+<div id="ad-banner">
+  <div class="ad-placeholder">📢 Ad Space Available — Sponsor the Claw Machine →</div>
+</div>
 
 
 <div id="ui">
